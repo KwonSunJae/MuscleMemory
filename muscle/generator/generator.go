@@ -32,6 +32,11 @@ func (g *GeneratorBase) NewGeneratorWithFile(filepath string, types string) (Gen
 	for {
 		var key, value string
 		_, err := fmt.Fscanf(file, "%s=%s\n", &key, &value)
+		//if key containes #, skip
+		if key[0] == '#' {
+			continue
+		}
+		//if EOF, break
 		if err == io.EOF {
 			break
 		}

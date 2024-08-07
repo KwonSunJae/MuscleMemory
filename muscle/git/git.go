@@ -1,6 +1,7 @@
 package git
 
 type Github interface {
+	Init(repositoryURL string, userEmail string, userName string) error
 	Clone() error
 	Commit() error
 	Fetch() error
@@ -10,6 +11,7 @@ type Github interface {
 	CreateBranch() error
 	DeleteBranch() error
 	Checkout() error
+	BranchList() ([]string, error)
 }
 
 type Git struct {
