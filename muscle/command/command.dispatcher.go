@@ -1,5 +1,7 @@
 package command
 
+import "fmt"
+
 type CommandDispatcher interface {
 	CommandDispatch(cmd []string) (string, error)
 }
@@ -20,25 +22,29 @@ func (c *CommandDispatcherImpl) CommandDispatch(cmd []string) (string, error) {
 
 	cmdType := cmd[0]
 	cmd = cmd[1:]
+	var out string
+	var err error
 	switch cmdType {
-	case "generate-terraform":
-		return c.commandHandler.GenerateTerraform(cmd)
-	case "generate-ansible":
-		return c.commandHandler.GenerateAnsible(cmd)
-	case "init-project":
-		return c.commandHandler.InitProject(cmd)
-	case "ready-project":
-		return c.commandHandler.ReadyProject(cmd)
-	case "add-terraform-project":
-		return c.commandHandler.AddTerraformProject(cmd)
-	case "add-ansible-project":
-		return c.commandHandler.AddAnsibleProject(cmd)
-	case "enroll-git-actions":
-		return c.commandHandler.EnrollGitActions(cmd)
+	case "init":
+		out, err = c.commandHandler.Init(cmd)
+	case "generate":
+		out, err = c.commandHandler.Generate(cmd)
+	case "ready":
+		out, err = c.commandHandler.Ready(cmd)
+	case "add":
+		out, err = c.commandHandler.Add(cmd)
+	case "enroll":
+		out, err = c.commandHandler.Enroll(cmd)
 	case "help":
-		return c.commandHandler.Help(cmd)
+		out, err = c.commandHandler.Help(cmd)
 	default:
-		return "", NewCommandError("Invalid command", nil)
+		out, err = "", fmt.Errorf("command_dispatcher_error: unsupported command")
 	}
+
+	if err != nil {
+		return out, NewCommandError("command_dispatcher_error", err)
+	}
+
+	return out, nil
 
 }
