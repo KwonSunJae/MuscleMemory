@@ -42,7 +42,8 @@ func (c *CommandDispatcherImpl) CommandDispatch(cmd []string) (string, error) {
 	}
 
 	if err != nil {
-		return out, NewCommandError("command_dispatcher_error", err)
+		fmt.Println(err)
+		return out, err
 	}
 
 	return out, nil

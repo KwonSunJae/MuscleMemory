@@ -26,6 +26,7 @@ func (c *CommandHandlerImpl) Init(cmd []string) (string, error) {
 	// Init
 
 	// cmd to config map
+	fmt.Println(cmd)
 	initConfig := cmdToConfigMap(cmd)
 
 	initProcessor, err := initProcessor.GetInitProcessor(initConfig)
@@ -82,11 +83,14 @@ func cmdToConfigMap(cmd []string) map[string]string {
 	var result = make(map[string]string)
 	// if prefix is "--", set key as value and value as true
 	// if prefix is "-", set key as value and value as next value
-
 	for len(cmd) >= 0 {
 		if cmd[0][:2] == "--" {
 			// set key as value and value as true
 			result[cmd[0][2:]] = "true"
+			fmt.Println(result)
+			if len(cmd) == 1 {
+				break
+			}
 			cmd = cmd[1:]
 
 		} else if cmd[0][:1] == "-" {
