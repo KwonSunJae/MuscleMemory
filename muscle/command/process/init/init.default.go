@@ -2,10 +2,10 @@ package init
 
 import (
 	"fmt"
-	"io/ioutil"
+	process_error "muscle/command/error"
 	systemCMD "muscle/command/system"
+	"muscle/logger"
 	"os"
-	"os/exec"
 	"strings"
 )
 
@@ -18,21 +18,18 @@ func (i *InitDefault) CheckConfig() error {
 	return nil
 }
 
-// -- Arguments List
-var EssentialArgList = []string{}
-
-var OptionalArgList = []string{
-	// Optional Arguments
-	"git-ssh",
-}
-
 func (i *InitDefault) CheckArgValidate() error {
 	// CheckArgValidate
+	var essentialArgList = []string{
+		// Essential Arguments
+		"repository-git-url",
+	}
 
 	// Check Essential Arguments
-	for _, essentialArg := range EssentialArgList {
+	for _, essentialArg := range essentialArgList {
 		if _, ok := i.Config[essentialArg]; !ok {
-			return fmt.Errorf("essential argument '%s' is missing", essentialArg)
+
+			return process_error.NewError(fmt.Sprintf("essential argument '%s' is missing", essentialArg), nil)
 		}
 	}
 
@@ -45,52 +42,29 @@ func (i *InitDefault) InputConfig() error {
 	// init시 필요한항목
 
 	// var initItems = [] string{
-	// 	"ssh-keygen",
-	// 	"user-email",
-	// 	"user-name",
 	// 	"repository-git-url",
 	// }
 
+	pr := logger.NewPrinter()
+
 	if _, ok := i.Config["input"]; ok { // if input is nil, load from 'muscle.ini' file
-		fmt.Print("Do you want to enroll new ssh-key for git? (y/n): ")
-		var temp string
-		fmt.Scanln(&temp)
 
-		if temp == "y" {
-			i.Config["ssh-keygen"] = "true"
-			var userEmail string
-			fmt.Print("Enter your email: ")
-			fmt.Scanln(&userEmail)
-			i.Config["user-email"] = userEmail
-
-		} else {
-			fmt.Println("Skip ssh-keygen")
-		}
-
-		fmt.Print("Have you already set git in your host? (y/n): ")
-		fmt.Scanln(&temp)
-
-		if temp == "n" {
-			i.Config["git-set"] = "true"
-			var userEmail, userName, repositoryGitURL string
-			fmt.Print("Enter your email: ")
-			fmt.Scanln(&userEmail)
-			fmt.Print("Enter your name: ")
-			fmt.Scanln(&userName)
-			fmt.Print("Enter your repository git url (ex: git@): ")
-			fmt.Scanln(&repositoryGitURL)
-			i.Config["user-email"] = userEmail
-			i.Config["user-name"] = userName
-			i.Config["repository-git-url"] = repositoryGitURL
-		}
+		repositoryGitURL := pr.Ask("Enter your repository git url")
+		i.Config["repository-git-url"] = repositoryGitURL
 
 	} else {
 		// Read 'muscle.ini' file
-		file, err := os.Open("muscle.ini")
-		if err != nil {
-			return err
+		if _, ok := i.Config["repository-git-url"]; !ok {
+			if _, ok := i.Config["r"]; ok {
+				i.Config["repository-git-url"] = i.Config["r"]
+			}
+			if _, ok := i.Config["repo"]; ok {
+				i.Config["repository-git-url"] = i.Config["repo"]
+			} else {
+				return process_error.NewError("essential argument 'repository-git-url' or 'r' flag is missing", nil)
+			}
+
 		}
-		defer file.Close()
 
 	}
 
@@ -100,88 +74,89 @@ func (i *InitDefault) InputConfig() error {
 func (i *InitDefault) Run() error {
 
 	// Run
+	pr := logger.NewPrinter()
+
 	cmd := systemCMD.NewCommandSystemExecutor()
-
-	fmt.Println("Start init process")
-
-	if i.Config["ssh-keygen"] == "true" {
-		fmt.Println("Start ssh-keygen process")
-		// 1. SSH 키 생성
-		err := cmd.Execute("ssh-keygen", "-t", "rsa", "-b", "4096", "-C", i.Config["user-email"], "-f", os.Getenv("HOME")+"/.ssh/id_rsa", "-N", "")
-		stdout, err := exec.Command("ssh-keygen", "-t", "rsa", "-b", "4096", "-C", i.Config["user-email"], "-f", os.Getenv("HOME")+"/.ssh/muscle.pub", "-N", "").CombinedOutput()
-		fmt.Println(string(stdout))
-		if err != nil {
-			return fmt.Errorf("ssh-keygen error: %v", err)
-		}
-		// 2. 생성한 SSH 키 출력
-		pubKeyPath := os.Getenv("HOME") + "/.ssh/id_rsa.pub"
-		pubKey, err := ioutil.ReadFile(pubKeyPath)
-		if err != nil {
-			return fmt.Errorf("failed to read SSH public key: %v", err)
-		}
-		fmt.Printf("Generated SSH Key:\n%s\n", string(pubKey))
-		fmt.Println("Please add the above SSH key to your Github account: https://github.com/settings/keys")
-	}
-
-	if i.Config["git-set"] == "true" {
-		fmt.Println("Start git-set process")
-		// 3. Git 설정
-		if err := cmd.Execute("git", "config", "--global", "user.email", i.Config["user-email"]); err != nil {
-			return fmt.Errorf("git config --global user.email error: %v", err)
-		}
-		if err := cmd.Execute("git", "config", "--global", "user.name", i.Config["user-name"]); err != nil {
-			return fmt.Errorf("git config --global user.name error: %v", err)
-		}
-	}
+	dir := strings.Split(strings.Split(i.Config["repository-git-url"], "/")[1], ".")[0]
 
 	// 4. Git Clone
-	fmt.Println("Start git clone process")
+	pr.Start("git clone process")
+
+	i.Config["dir"] = dir
 	if err := cmd.Execute("git", "clone", i.Config["repository-git-url"]); err != nil {
-		return fmt.Errorf("git clone error: %v", err)
+		// if Already Exist Repository, delete and clone
+		pr.Error("check your repository is already exist")
+		return process_error.NewError("git clone error: You should have to Delete Dir.%v", err)
 	}
+	pr.Done()
+
+	// Check muscle.init file exist
+	pr.Start("Check muscle.init file exist")
+	if _, err := os.Stat(dir + "/muscle.init"); err == nil {
+		ans := pr.Ask("muscle.init file is already exist. Do you want to delete it? (y/n)")
+		if ans == "y" {
+
+			if err := cmd.Execute("rm", dir+"/muscle.init"); err != nil {
+				pr.Error("check muscle.init file is exist")
+				return process_error.NewError("rm muscle.init error", err)
+			}
+
+		} else {
+			pr.Done()
+			return nil
+		}
+	}
+	pr.Done()
 
 	// 5. Generate muscle.init file at clone repository
-	fmt.Println("Start generate muscle.init file")
-	dir := strings.Split(strings.Split(i.Config["repository-git-url"], "/")[1], ".")[0]
+	pr.Start("Start generate muscle.init file")
 	if err := cmd.Execute("touch", dir+"/muscle.init"); err != nil {
-		return fmt.Errorf("touch muscle.init error: %v", err)
+		return process_error.NewError("touch muscle.init error: %v", err)
 	}
+	pr.Done()
 
 	// 6. Write config to muscle.init file
-	fmt.Println("Start write config to muscle.init file")
+	pr.Start("Start write config to muscle.init file")
 	file, err := os.OpenFile(dir+"/muscle.init", os.O_WRONLY, 0644)
 	if err != nil {
-		return fmt.Errorf("failed to open muscle.init file: %v", err)
+		pr.Error("check muscle.init file is exist")
+		return process_error.NewError("failed to open muscle.init file", err)
 	}
 	for key, value := range i.Config {
 		if _, err := file.WriteString(key + "=" + value + "\n"); err != nil {
-			return fmt.Errorf("failed to write config to muscle.init file: %v", err)
+			pr.Error("check muscle.init file is exist")
+			return process_error.NewError("failed to write config to muscle.init file", err)
 		}
 	}
 	if err := file.Close(); err != nil {
-		return fmt.Errorf("failed to close muscle.init file: %v", err)
+		pr.Error("check muscle.init file is exist")
+		return process_error.NewError("failed to close muscle.init file", err)
 	}
+	pr.Done()
 
 	// 7. Git Add, Commit, Push
-	fmt.Println("Start git push muscle.init file")
-	if err := cmd.Execute("git", "add", "."); err != nil {
-		return fmt.Errorf("git add error: %v", err)
+	pr.Start("Start git add, commit, push process")
+	if err := cmd.Execute("git", "-C", dir, "add", "."); err != nil {
+		pr.Error("check git add")
+		return process_error.NewError("git add error", err)
 	}
-	if err := cmd.Execute("git", "commit", "-m", "Add muscle.init file"); err != nil {
-		return fmt.Errorf("git commit error: %v", err)
+	if err := cmd.Execute("git", "-C", dir, "commit", "-m", "Add muscle.init file"); err != nil {
+		pr.Error("check git commit")
+		return process_error.NewError("git commit error", err)
 	}
-	if err := cmd.Execute("git", "push", "origin", "master"); err != nil {
-		return fmt.Errorf("git push error: %v", err)
+	if err := cmd.Execute("git", "-C", dir, "push", "origin", "main"); err != nil {
+		pr.Error("check git push")
+		return process_error.NewError("git push error", err)
 	}
+	pr.Done()
 
-	// 8. Git Create Branch blank, then puplish
-	fmt.Println("Start git create branch blank")
-	if err := cmd.Execute("git", "checkout", "-b", "blank"); err != nil {
-		return fmt.Errorf("git checkout -b blank error: %v", err)
+	// 8. Copy dir/muscle.init file to muscle.init file
+	pr.Start("Copy muscle.init file to muscle.init")
+	if err := cmd.Execute("cp", dir+"/muscle.init", "muscle.init"); err != nil {
+		pr.Error("check muscle.init file is exist")
+		return process_error.NewError("cp muscle.init error", err)
 	}
-	if err := cmd.Execute("git", "push", "origin", "blank"); err != nil {
-		return fmt.Errorf("git push origin blank error: %v", err)
-	}
+	pr.Done()
 
 	return nil
 }
