@@ -3,6 +3,7 @@ package init
 import (
 	"fmt"
 	process_error "muscle/command/error"
+	git "muscle/command/git"
 	systemCMD "muscle/command/system"
 	"muscle/logger"
 	"os"
@@ -78,12 +79,12 @@ func (i *InitDefault) Run() error {
 
 	cmd := systemCMD.NewCommandSystemExecutor()
 	dir := strings.Split(strings.Split(i.Config["repository-git-url"], "/")[1], ".")[0]
-
+	git := git.NewGit(dir)
 	// 4. Git Clone
 	pr.Start("git clone process")
 
 	i.Config["dir"] = dir
-	if err := cmd.Execute("git", "clone", i.Config["repository-git-url"]); err != nil {
+	if err := git.Clone(i.Config["repository-git-url"]); err != nil {
 		// if Already Exist Repository, delete and clone
 		pr.Error("check your repository is already exist")
 		return process_error.NewError("git clone error: You should have to Delete Dir.%v", err)
@@ -136,15 +137,15 @@ func (i *InitDefault) Run() error {
 
 	// 7. Git Add, Commit, Push
 	pr.Start("Start git add, commit, push process")
-	if err := cmd.Execute("git", "-C", dir, "add", "."); err != nil {
+	if err := git.AddAll(); err != nil {
 		pr.Error("check git add")
 		return process_error.NewError("git add error", err)
 	}
-	if err := cmd.Execute("git", "-C", dir, "commit", "-m", "Add muscle.init file"); err != nil {
+	if err := git.Commit("Create muscle.init file"); err != nil {
 		pr.Error("check git commit")
 		return process_error.NewError("git commit error", err)
 	}
-	if err := cmd.Execute("git", "-C", dir, "push", "origin", "main"); err != nil {
+	if err := git.Push(); err != nil {
 		pr.Error("check git push")
 		return process_error.NewError("git push error", err)
 	}

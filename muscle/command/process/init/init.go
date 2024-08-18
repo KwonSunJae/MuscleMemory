@@ -3,6 +3,7 @@ package init
 import (
 	"bufio"
 	"fmt"
+	process_error "muscle/command/error"
 	"os"
 	"strings"
 )
@@ -33,7 +34,7 @@ func GetInitProcessor(config map[string]string) (Init, error) {
 	case "default":
 		tempInitProcessor = &InitDefault{Config: config}
 	default:
-		return nil, fmt.Errorf("init processor error: unsupported type")
+		return nil, process_error.NewError(fmt.Sprintf("invalid type '%s'", config["type"]), nil)
 	}
 
 	return tempInitProcessor, nil
@@ -71,8 +72,38 @@ func LoadConfig(filename string) (map[string]string, error) {
 
 	// 에러 체크
 	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("error reading file: %w", err)
+		return nil, process_error.NewError("error reading file", err)
 	}
 
 	return configMap, nil
+}
+
+func WriteConfig(filename string, configMap map[string]string) error {
+	// 파일 열기
+	file, err := os.Create(filename)
+	if err != nil {
+		return fmt.Errorf("error creating file: %w", err)
+	}
+	defer file.Close()
+
+	// key=value 형식으로 파일 쓰기
+	for key, value := range configMap {
+		_, err := fmt.Fprintf(file, "%s=%s\n", key, value)
+		if err != nil {
+			return fmt.Errorf("error writing file: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func CheckArgValidate(config map[string]string, essentialArgList []string) error {
+	// Check Essential Arguments
+	for _, essentialArg := range essentialArgList {
+		if _, ok := config[essentialArg]; !ok {
+			return process_error.NewError(fmt.Sprintf("essential argument '%s' is missing", essentialArg), nil)
+		}
+	}
+
+	return nil
 }

@@ -3,6 +3,7 @@ package init
 import (
 	"fmt"
 	process_error "muscle/command/error"
+	git "muscle/command/git"
 	systemCMD "muscle/command/system"
 	"muscle/logger"
 	"os"
@@ -25,7 +26,7 @@ func (i *InitProject) CheckArgValidate() error {
 	for _, essentialArg := range essentialArgList {
 		if _, ok := i.Config[essentialArg]; !ok {
 
-			return fmt.Errorf("essential argument '%s' is missing", essentialArg)
+			return process_error.NewError(fmt.Sprintf("essential argument '%s' is missing", essentialArg), nil)
 		}
 	}
 
@@ -45,10 +46,10 @@ func (i *InitProject) InputConfig() error {
 			if _, ok := i.Config["n"]; ok {
 				i.Config["name"] = i.Config["n"]
 			} else {
-				return fmt.Errorf("essential argument 'name' or 'n' flag is missing")
+				return process_error.NewError("Please enter your project name with 'n' or 'name' flag", nil)
 			}
-
 		}
+
 	}
 
 	pr.Start("Read muscle.init file")
@@ -67,14 +68,15 @@ func (i *InitProject) Run() error {
 	// Run
 	pr := logger.NewPrinter()
 	cmd := systemCMD.NewCommandSystemExecutor()
+	git := git.NewGit(i.Config["dir"])
+
 	// 1.Read muscle.init file
 	dir := i.Config["dir"]
 
 	//3. create branch new project at blank branch
 	pr.Start("Create branch project from blank branch")
 
-	err := cmd.Execute("git", "-C", dir, "checkout", "--orphan", i.Config["name"])
-	if err != nil {
+	if err := git.NewBlankBranch(i.Config["name"]); err != nil {
 		pr.Error("You should check your branch name. It is already exist")
 		return process_error.NewError("Create New branch failed.", err)
 	}
@@ -83,32 +85,28 @@ func (i *InitProject) Run() error {
 
 	//4. create a dir and commit then push
 	pr.Start("Create a dir and create project.conf file and commit push")
-	err = os.Mkdir(dir+"/"+i.Config["name"], 0755)
-	if err != nil {
+
+	if err := os.Mkdir(dir+"/"+i.Config["name"], 0755); err != nil {
 		pr.Error("You should check your project name. It is already exist")
 		return process_error.NewError("Create New project failed.", err)
 	}
 
-	err = cmd.Execute("touch", dir+"/"+i.Config["name"]+"/project.conf")
-	if err != nil {
+	if err := cmd.Execute("touch", dir+"/"+i.Config["name"]+"/project.conf"); err != nil {
 		pr.Error("project.conf file is not created")
 		return process_error.NewError("Create New project failed.", err)
 	}
 
-	err = cmd.Execute("git", "-C", dir, "add", i.Config["name"]+"/project.conf")
-	if err != nil {
+	if err := git.AddAll(); err != nil {
 		pr.Error("Check your git status")
 		return process_error.NewError("Create New project failed.", err)
 	}
 
-	err = cmd.Execute("git", "-C", dir, "commit", "-m", "Create project.conf file")
-	if err != nil {
+	if err := git.Commit("Create project.conf file"); err != nil {
 		pr.Error("Check your git status")
 		return process_error.NewError("Create New project failed.", err)
 	}
 
-	err = cmd.Execute("git", "-C", dir, "push", "origin", i.Config["name"])
-	if err != nil {
+	if err := git.PushBranch(i.Config["name"]); err != nil {
 		pr.Error("Check your git status")
 		return process_error.NewError("Create New project failed.", err)
 	}
