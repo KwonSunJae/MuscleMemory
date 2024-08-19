@@ -27,7 +27,7 @@ func (c *CommandSystemExecutor) Execute(cmdname string, cmdarg ...string) error 
 	stdoutStderr, err := cmd.CombinedOutput()
 	if err != nil {
 		c.stderr = string(stdoutStderr)
-		return fmt.Errorf("command_system_executor_error:%v", err)
+		return fmt.Errorf("%s %s: %v", cmdname, cmdarg, err)
 	}
 
 	c.stdout = string(stdoutStderr)

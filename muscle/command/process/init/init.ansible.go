@@ -14,6 +14,8 @@ type InitAnsible struct {
 func (i *InitAnsible) CheckArgValidate() error {
 	// CheckArgValidate
 	if err := CheckArgValidate(i.Config, []string{
+		"project-name",
+		"dir",
 		"repository-git-url",
 	}); err != nil {
 		return process_error.NewError("essential argument is missing", err)
@@ -44,16 +46,24 @@ func (i *InitAnsible) InputConfig() error {
 		}
 	}
 
+	pr.Start("Read muscle.init file")
+	conf, err := LoadConfig("muscle.init")
+	if err != nil {
+		pr.Error("muscle.init file is not exist. Please init")
+		return process_error.NewError("muscle.init file is not exist", err)
+	}
+	i.Config["dir"] = conf["dir"]
+	i.Config["repository-git-url"] = conf["repository-git-url"]
+	pr.Done()
+
 	return nil
 }
 
 func (i *InitAnsible) Run() error {
 	// Run
-
 	pr := logger.NewPrinter()
 	git := git.NewGit(i.Config["dir"])
-
-	// 1. checkout project
+	// 1. CLone Branch project
 	pr.Start("Clone Branch project") // IF CHECK OUT, IT may CAUSE Lock Error
 
 	//check project is already exist
@@ -82,20 +92,21 @@ func (i *InitAnsible) Run() error {
 		pr.Error("Please init the project")
 		return process_error.NewError("Please init the project", err)
 	}
-	if conf["project-type"] != "ansible" {
-		pr.Error("Please init the project")
-		return process_error.NewError("Please init the project", nil)
+	if _, ok := conf["project-type"]; ok && conf["project-type"] != "ansible" {
+		pr.Error("This Project set already other type")
+		return process_error.NewError("This Project set already other type", nil)
 	}
 	pr.Done()
 
 	// 3. wirte project.conf
 
-	pr.Start("Write project.conf file")
+	pr.Start("Config project.conf file")
 	conf["project-type"] = "ansible"
 	conf["project-name"] = i.Config["project-name"]
-	if err := WriteConfig(i.Config["dir"]+"/"+i.Config["name"]+"/project.conf", conf); err != nil {
-		pr.Error("Write project.conf file error")
-		return process_error.NewError("Write project.conf file error", err)
+
+	if err := WriteConfig(i.Config["project-name"]+"/"+i.Config["project-name"]+"/project.conf", conf); err != nil {
+		pr.Error("Config project.conf file error")
+		return process_error.NewError("Config project.conf file error", err)
 	}
 	pr.Done()
 

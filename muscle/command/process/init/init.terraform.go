@@ -15,6 +15,8 @@ func (i *InitTerraform) CheckArgValidate() error {
 	// CheckArgValidate
 
 	if err := CheckArgValidate(i.Config, []string{
+		"project-name",
+		"dir",
 		"repository-git-url",
 	}); err != nil {
 		return process_error.NewError("essential argument is missing", err)
@@ -44,6 +46,15 @@ func (i *InitTerraform) InputConfig() error {
 			}
 		}
 	}
+	pr.Start("Read muscle.init file")
+	conf, err := LoadConfig("muscle.init")
+	if err != nil {
+		pr.Error("muscle.init file is not exist. Please init")
+		return process_error.NewError("muscle.init file is not exist", err)
+	}
+	i.Config["dir"] = conf["dir"]
+	i.Config["repository-git-url"] = conf["repository-git-url"]
+	pr.Done()
 
 	return nil
 }
@@ -51,7 +62,7 @@ func (i *InitTerraform) InputConfig() error {
 func (i *InitTerraform) Run() error {
 	// Run
 	pr := logger.NewPrinter()
-	git := git.NewGit(i.Config["dir"])
+	git := git.NewGit(i.Config["project-name"])
 	// 1. CLone Branch project
 	pr.Start("Clone Branch project") // IF CHECK OUT, IT may CAUSE Lock Error
 
@@ -81,7 +92,7 @@ func (i *InitTerraform) Run() error {
 		pr.Error("Please init the project")
 		return process_error.NewError("Please init the project", err)
 	}
-	if conf["project-type"] != "terraform" {
+	if _, ok := conf["project-type"]; ok && conf["project-type"] != "terraform" {
 		pr.Error("This project is aleady set other type.")
 		return process_error.NewError("This project is aleady set other type.", nil)
 	}
@@ -92,7 +103,7 @@ func (i *InitTerraform) Run() error {
 	conf["project-type"] = "terraform"
 	conf["project-name"] = i.Config["project-name"]
 
-	if err := WriteConfig(i.Config["dir"]+"/"+i.Config["project-name"]+"/project.conf", conf); err != nil {
+	if err := WriteConfig(i.Config["project-name"]+"/"+i.Config["project-name"]+"/project.conf", conf); err != nil {
 		pr.Error("Config project.conf file error")
 		return process_error.NewError("Config project.conf file error", err)
 	}
@@ -111,7 +122,7 @@ func (i *InitTerraform) Run() error {
 	}
 
 	if err := git.PushBranch(i.Config["project-name"]); err != nil {
-		pr.Error("Check your git status")
+		pr.Error("Check your git status. Maybe no changes in your project")
 		return process_error.NewError("Commit and Push failed.", err)
 	}
 

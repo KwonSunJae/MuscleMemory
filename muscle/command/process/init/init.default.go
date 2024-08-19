@@ -159,5 +159,25 @@ func (i *InitDefault) Run() error {
 	}
 	pr.Done()
 
+	// 10.Create blank branch then commit and push
+	pr.Start("Create blank branch")
+	if err := git.NewBlankBranch("blank"); err != nil {
+		pr.Error("check git branch")
+		return process_error.NewError("git branch error", err)
+	}
+	if err := git.AddAll(); err != nil {
+		pr.Error("check git add")
+		return process_error.NewError("git add error", err)
+	}
+	if err := git.Commit("Create blank branch"); err != nil {
+		pr.Error("check git commit")
+		return process_error.NewError("git commit error", err)
+	}
+	if err := git.Push(); err != nil {
+		pr.Error("check git push")
+		return process_error.NewError("git push error", err)
+	}
+	pr.Done()
+
 	return nil
 }

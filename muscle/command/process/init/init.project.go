@@ -59,6 +59,7 @@ func (i *InitProject) InputConfig() error {
 		return process_error.NewError("muscle.init file is not exist", err)
 	}
 	i.Config["dir"] = conf["dir"]
+	i.Config["repository-git-url"] = conf["repository-git-url"]
 	pr.Done()
 
 	return nil
@@ -73,14 +74,32 @@ func (i *InitProject) Run() error {
 	// 1.Read muscle.init file
 	dir := i.Config["dir"]
 
+	// 2. check project is already exist
+	pr.Start("Check Main Branch") // IF CHECK OUT, IT may CAUSE Lock Error
+	if _, err := os.Stat(dir); err == nil {
+		if errs := git.Fetch(); errs != nil {
+			pr.Error("Please init the project")
+			return process_error.NewError("Please init the project", errs)
+		}
+		git.Pull()
+	} else {
+		if err := git.Clone(i.Config["repository-git-url"]); err != nil {
+			pr.Error("Please init the project")
+			return process_error.NewError("Please init the project", err)
+		}
+	}
+	pr.Done()
+
 	//3. create branch new project at blank branch
 	pr.Start("Create branch project from blank branch")
-
-	if err := git.NewBlankBranch(i.Config["name"]); err != nil {
-		pr.Error("You should check your branch name. It is already exist")
+	if err := git.Checkout("blank"); err != nil {
+		pr.Error("Check your git status")
 		return process_error.NewError("Create New branch failed.", err)
 	}
-
+	if err := git.NewBlankBranch(i.Config["name"]); err != nil {
+		pr.Error("You should check your branch name. Maybe name is duplicated")
+		return process_error.NewError("Create New branch failed.", err)
+	}
 	pr.Done()
 
 	//4. create a dir and commit then push
@@ -90,25 +109,29 @@ func (i *InitProject) Run() error {
 		pr.Error("You should check your project name. It is already exist")
 		return process_error.NewError("Create New project failed.", err)
 	}
-
 	if err := cmd.Execute("touch", dir+"/"+i.Config["name"]+"/project.conf"); err != nil {
 		pr.Error("project.conf file is not created")
 		return process_error.NewError("Create New project failed.", err)
 	}
-
 	if err := git.AddAll(); err != nil {
 		pr.Error("Check your git status")
 		return process_error.NewError("Create New project failed.", err)
 	}
-
 	if err := git.Commit("Create project.conf file"); err != nil {
 		pr.Error("Check your git status")
 		return process_error.NewError("Create New project failed.", err)
 	}
-
 	if err := git.PushBranch(i.Config["name"]); err != nil {
 		pr.Error("Check your git status")
 		return process_error.NewError("Create New project failed.", err)
+	}
+	pr.Done()
+
+	// 5. checkout main branch
+	pr.Start("Checkout Main Branch")
+	if err := git.Checkout("main"); err != nil {
+		pr.Error("Check your git status")
+		return process_error.NewError("Checkout main branch failed.", err)
 	}
 	pr.Done()
 

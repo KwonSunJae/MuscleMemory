@@ -18,6 +18,7 @@ type Git interface {
 	Rebase() error
 	Reset() error
 	Branch() error
+	PublishBranch(branch string) error
 }
 
 type GitImpl struct {
@@ -29,7 +30,10 @@ type GitImpl struct {
 func NewGit(repo string) Git {
 	return &GitImpl{repository: repo, cmd: systemCMD.NewCommandSystemExecutor()}
 }
-
+func (g *GitImpl) PublishBranch(branch string) error {
+	// Push
+	return g.cmd.Execute("git", "-C", g.repository, "push", "--set-upstream", "origin", branch)
+}
 func (g *GitImpl) CloneBranch(url string, branch string) error {
 	// Clone
 	g.repository = branch
@@ -62,7 +66,7 @@ func (g *GitImpl) AddAll() error {
 
 func (g *GitImpl) Commit(message string) error {
 	// Commit
-	return g.cmd.Execute("git", "-C", g.repository, "commit", "-m", message)
+	return g.cmd.Execute("git", "-C", g.repository, "commit", "-m", `"`+message+`"`)
 }
 
 func (g *GitImpl) Push() error {
