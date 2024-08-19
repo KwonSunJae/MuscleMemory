@@ -42,7 +42,7 @@ func (i *InitTerraform) InputConfig() error {
 			if _, ok := i.Config["n"]; ok {
 				i.Config["project-name"] = i.Config["n"]
 			} else {
-				return process_error.NewError("Please enter your project name with 'n' or 'p' or 'project-name' flag", nil)
+				return process_error.NewError("Please enter your project name with 'n' or 'p' or'project-name' or 'project' flag", nil)
 			}
 		}
 	}

@@ -14,11 +14,6 @@ type InitDefault struct {
 	Config map[string]string
 }
 
-func (i *InitDefault) CheckConfig() error {
-	// CheckConfig
-	return nil
-}
-
 func (i *InitDefault) CheckArgValidate() error {
 	// CheckArgValidate
 	var essentialArgList = []string{
@@ -58,15 +53,12 @@ func (i *InitDefault) InputConfig() error {
 		if _, ok := i.Config["repository-git-url"]; !ok {
 			if _, ok := i.Config["r"]; ok {
 				i.Config["repository-git-url"] = i.Config["r"]
-			}
-			if _, ok := i.Config["repo"]; ok {
+			} else if _, ok := i.Config["repo"]; ok {
 				i.Config["repository-git-url"] = i.Config["repo"]
 			} else {
-				return process_error.NewError("essential argument 'repository-git-url' or 'r' flag is missing", nil)
+				return process_error.NewError("Please enter your repository git url with 'r' or 'repo' flag", nil)
 			}
-
 		}
-
 	}
 
 	return nil
@@ -173,10 +165,11 @@ func (i *InitDefault) Run() error {
 		pr.Error("check git commit")
 		return process_error.NewError("git commit error", err)
 	}
-	if err := git.Push(); err != nil {
+	if err := git.PushBranch("blank"); err != nil {
 		pr.Error("check git push")
 		return process_error.NewError("git push error", err)
 	}
+
 	pr.Done()
 
 	return nil

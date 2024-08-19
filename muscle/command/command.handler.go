@@ -24,12 +24,17 @@ func NewCommandHandler() CommandHandler {
 
 func (c *CommandHandlerImpl) Init(cmd []string) (string, error) {
 	// Init
-
+	var types string
 	// cmd to config map
-
+	if cmd[0][0] == '-' {
+		types = "default"
+	} else {
+		types = cmd[0]
+		cmd = cmd[1:]
+	}
 	initConfig := cmdToConfigMap(cmd)
 
-	initProcessor, err := initProcessor.GetInitProcessor(initConfig)
+	initProcessor, err := initProcessor.GetInitProcessor(types, initConfig)
 	if err != nil {
 		return "", fmt.Errorf("command_handler_comp_error: \n %v", err)
 	}
@@ -82,16 +87,6 @@ func cmdToConfigMap(cmd []string) map[string]string {
 
 	// cmd to config map
 	var result = make(map[string]string)
-	// type check
-	if cmd[0][0] == '-' {
-		result["type"] = "default"
-	} else {
-		result["type"] = cmd[0]
-		if len(cmd) == 1 {
-			return result
-		}
-		cmd = cmd[1:]
-	}
 
 	// if prefix is "--", set key as value and value as true
 	// if prefix is "-", set key as value and value as next value

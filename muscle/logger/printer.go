@@ -76,7 +76,7 @@ func (p *Printer) Done() {
 	log.Info("Task completed", zap.String("task_id", p.taskName))
 
 	close(p.done) // Stop the loading indicator
-	fmt.Printf("\rTask %s completed successfully.\n", p.taskName)
+	fmt.Printf("\r\nTask %s completed successfully.\n", p.taskName)
 }
 
 func NewPrinter() *Printer {

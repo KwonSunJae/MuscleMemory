@@ -34,14 +34,12 @@ func (i *InitAnsible) InputConfig() error {
 		if _, ok := i.Config["project-name"]; !ok {
 			if _, ok := i.Config["project"]; ok {
 				i.Config["project-name"] = i.Config["project"]
-			}
-			if _, ok := i.Config["p"]; ok {
+			} else if _, ok := i.Config["p"]; ok {
 				i.Config["project-name"] = i.Config["p"]
-			}
-			if _, ok := i.Config["n"]; ok {
+			} else if _, ok := i.Config["n"]; ok {
 				i.Config["project-name"] = i.Config["n"]
 			} else {
-				return process_error.NewError("Please enter your project name with 'n' or 'p' or 'project-name' flag", nil)
+				return process_error.NewError("Please enter your project name with 'n' or 'p' or'project-name' or 'project' flag", nil)
 			}
 		}
 	}

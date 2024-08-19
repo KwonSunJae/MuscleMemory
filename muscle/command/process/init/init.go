@@ -15,14 +15,14 @@ type Init interface {
 	Run() error
 }
 
-func GetInitProcessor(config map[string]string) (Init, error) {
+func GetInitProcessor(types string, config map[string]string) (Init, error) {
 	// set config map from cmd
 
 	// InputConfig
 	//if i.Config dont have "type" key, set default value "project"
 
 	var tempInitProcessor Init
-	switch config["type"] {
+	switch types {
 	case "project":
 		tempInitProcessor = &InitProject{Config: config}
 	case "terraform":
