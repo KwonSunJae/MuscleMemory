@@ -121,10 +121,10 @@ func (i *InitGitActions) Run() error {
 		}
 	}
 	pr.Done()
-
+	actionfile := i.Config["project-name"] + "/.github/workflows/" + i.Config["project-name"] + ".yml"
 	// create github actions file
 	pr.Start("Touch main.yml file")
-	if _, err := os.Create(i.Config["project-name"] + "/.github/workflows/main.yml"); err != nil {
+	if _, err := os.Create(actionfile); err != nil {
 		pr.Error("create main.yml file error")
 		return process_error.NewError("create main.yml file error", err)
 	}
@@ -137,7 +137,7 @@ func (i *InitGitActions) Run() error {
 		pr.Error("generator error")
 		return process_error.NewError("generator error", err)
 	}
-	if err := gen.Generate(i.Config["project-name"] + "/.github/workflows/main.yml"); err != nil {
+	if err := gen.Generate(actionfile); err != nil {
 		pr.Error("generate github actions file error")
 		return process_error.NewError("generate github actions file error", err)
 	}

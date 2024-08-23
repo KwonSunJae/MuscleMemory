@@ -5,7 +5,7 @@ const (
 on:
   push:
     branches:
-      - {{.project-name}}
+      - {{.branch}}
 
 jobs:
   deploy:
@@ -24,8 +24,8 @@ jobs:
         script: |
       echo "{{.rootpassword}}" | sudo -S apt-get update -y && sudo apt-get upgrade -y
       sudo apt-get install -y ansible git
-      rm -rf {{.project-name}}
-      git clone -b {{.project-name}} {{.repository}} {{.project-name}}
+      rm -rf {{.branch}}
+      git clone -b {{.branch}} {{.repository}} {{.branch}}
       cd {{.branch}}
       for playbook in $(find . -name "*.yml"); do
            ansible-playbook -i inventory "$playbook"
@@ -36,7 +36,7 @@ jobs:
 on:
   push:
     branches:
-    - {{.project-name}}
+    - {{.branch}}
   
 jobs:
   deploy:
@@ -52,9 +52,9 @@ jobs:
     script: |
     echo "{{.rootpassword}}" | sudo -S apt-get update -y && sudo apt-get upgrade -y
     sudo apt-get install -y ansible git
-    rm -rf {{.project-name}}
-    git clone -b {{.project-name}} {{.repository}} {{.project-name}}
-    cd {{.project-name}}
+    rm -rf {{.branch}}
+    git clone -b {{.branch}} {{.repository}} {{.branch}}
+    cd {{.branch}}
     for playbook in $(find . -name "*.yml"); do
            ansible-playbook -i inventory "$playbook"
     done
@@ -64,7 +64,7 @@ jobs:
 on:
   push:
     branches:
-    - {{.project-name}}
+    - {{.branch}}
   
 jobs:
   deploy:
@@ -80,9 +80,9 @@ jobs:
     script: |
     echo "{{.rootpassword}}" | sudo -S apt-get update -y && sudo apt-get upgrade -y
     sudo apt-get install -y terraform git
-    rm -rf {{.project-name}}
-    git clone -b {{.project-name}} {{.repository}} {{.project-name}}
-    cd {{.project-name}}
+    rm -rf {{.branch}}
+    git clone -b {{.branch}} {{.repository}} {{.branch}}
+    cd {{.branch}}
     terraform init
     terraform apply -auto-approve
     cd ..
@@ -91,7 +91,7 @@ jobs:
 on:
   push:
     branches:
-    - {{.project-name}}
+    - {{.branch}}
 
 jobs:
   deploy:
@@ -107,9 +107,9 @@ jobs:
     script: |
     echo "{{.rootpassword}}" | sudo -S apt-get update -y && sudo apt-get upgrade -y
     sudo apt-get install -y terraform git
-    rm -rf {{.project-name}}
-    git clone -b {{.project-name}} {{.repository}} {{.project-name}}
-    cd {{.project-name}}
+    rm -rf {{.branch}}
+    git clone -b {{.branch}} {{.repository}} {{.branch}}
+    cd {{.branch}}
     terraform init
     terraform apply -auto-approve
     cd ..
@@ -136,13 +136,16 @@ jobs:
 
       - name: Terraform Init
         run: terraform init
+        working-directory: ./{{ .branch }}
 
       - name: Terraform Plan
         id: plan
         run: terraform plan -out=tfplan
+        working-directory: ./{{ .branch }}
 
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
+        working-directory: ./{{ .branch }}
 
       - name: Commit tfstate file
         run: |
@@ -154,6 +157,7 @@ jobs:
           git push
         env:
           GITHUB_TOKEN: {{ .github_token}}
+        working-directory: ./{{ .branch }}
 `
 	GitActionsAnsiblePublicTemplate = `
 name: Ansible Playbook Runner
@@ -161,7 +165,7 @@ name: Ansible Playbook Runner
 on:
   push:
     branches:
-      - {{.project-name}}
+      - {{.branch}}
 
 jobs:
   ansible:
