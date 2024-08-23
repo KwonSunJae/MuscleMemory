@@ -6,6 +6,7 @@ import (
 	git "muscle/command/git"
 	systemCMD "muscle/command/system"
 	"muscle/logger"
+	"muscle/util/loader"
 	"os"
 )
 
@@ -53,7 +54,7 @@ func (i *InitProject) InputConfig() error {
 	}
 
 	pr.Start("Read muscle.init file")
-	conf, err := LoadConfig("muscle.init")
+	conf, err := loader.LoadConfig("muscle.init")
 	if err != nil {
 		pr.Error("muscle.init file is not exist. Please init")
 		return process_error.NewError("muscle.init file is not exist", err)

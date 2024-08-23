@@ -3,6 +3,8 @@ package generator
 import (
 	"errors"
 	"fmt"
+	process_error "muscle/command/error"
+	"os"
 	"strings"
 )
 
@@ -86,14 +88,14 @@ func (g *GeneratorTerraform) CheckConfig() error {
 			}
 		}
 	} else {
-		return errors.New("provider not found. you should check provider key")
+		return process_error.NewError(fmt.Sprintf("invalid provider '%s'", g.Config["provider"]), nil)
 	}
 	return nil
 }
 
-func (g *GeneratorTerraform) Generate() (string, error) {
+func (g *GeneratorTerraform) Generate(filepath string) error {
 	if err := g.CheckConfig(); err != nil {
-		return "", err
+		return err
 	}
 
 	var tfConfig strings.Builder
@@ -109,10 +111,20 @@ func (g *GeneratorTerraform) Generate() (string, error) {
 	case "gcp":
 		tfConfig.WriteString(g.generateGCPProvider())
 	default:
-		return "", errors.New("unsupported provider")
+		return process_error.NewError(fmt.Sprintf("invalid provider '%s'", g.Config["provider"]), nil)
 	}
 
-	return tfConfig.String(), nil
+	file, err := os.Open(filepath)
+	if err != nil {
+		return process_error.NewError("error creating file", err)
+	}
+	defer file.Close()
+	_, err = fmt.Fprint(file, tfConfig.String())
+	if err != nil {
+		return process_error.NewError("error writing file", err)
+	}
+
+	return nil
 }
 
 func (g *GeneratorTerraform) generateOpenstackProvider() string {
@@ -141,6 +153,7 @@ provider "openstack" {
 		}
 	}
 	tfConfig.WriteString("}\n")
+
 	return tfConfig.String()
 }
 

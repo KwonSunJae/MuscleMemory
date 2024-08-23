@@ -4,6 +4,9 @@ import (
 	process_error "muscle/command/error"
 	git "muscle/command/git"
 	"muscle/logger"
+	"muscle/util/checker"
+	"muscle/util/loader"
+	"muscle/util/writer"
 	"os"
 )
 
@@ -13,7 +16,7 @@ type InitAnsible struct {
 
 func (i *InitAnsible) CheckArgValidate() error {
 	// CheckArgValidate
-	if err := CheckArgValidate(i.Config, []string{
+	if err := checker.CheckArgValidate(i.Config, []string{
 		"project-name",
 		"dir",
 		"repository-git-url",
@@ -45,7 +48,7 @@ func (i *InitAnsible) InputConfig() error {
 	}
 
 	pr.Start("Read muscle.init file")
-	conf, err := LoadConfig("muscle.init")
+	conf, err := loader.LoadConfig("muscle.init")
 	if err != nil {
 		pr.Error("muscle.init file is not exist. Please init")
 		return process_error.NewError("muscle.init file is not exist", err)
@@ -85,7 +88,7 @@ func (i *InitAnsible) Run() error {
 
 	// 2. check project.conf file
 	pr.Start("Check project.conf file")
-	conf, err := LoadConfig(i.Config["project-name"] + "/" + i.Config["project-name"] + "/project.conf")
+	conf, err := loader.LoadConfig(i.Config["project-name"] + "/" + i.Config["project-name"] + "/project.conf")
 	if err != nil {
 		pr.Error("Please init the project")
 		return process_error.NewError("Please init the project", err)
@@ -102,7 +105,7 @@ func (i *InitAnsible) Run() error {
 	conf["project-type"] = "ansible"
 	conf["project-name"] = i.Config["project-name"]
 
-	if err := WriteConfig(i.Config["project-name"]+"/"+i.Config["project-name"]+"/project.conf", conf); err != nil {
+	if err := writer.WriteConfig(i.Config["project-name"]+"/"+i.Config["project-name"]+"/project.conf", conf); err != nil {
 		pr.Error("Config project.conf file error")
 		return process_error.NewError("Config project.conf file error", err)
 	}

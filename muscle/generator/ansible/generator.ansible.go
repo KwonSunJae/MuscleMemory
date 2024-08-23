@@ -9,6 +9,6 @@ func (g *GeneratorAnsible) CheckConfig() error {
 	return nil
 }
 
-func (g *GeneratorAnsible) Generate() (string, error) {
-	return "", nil
+func (g *GeneratorAnsible) Generate(filepath string) error {
+	return nil
 }
