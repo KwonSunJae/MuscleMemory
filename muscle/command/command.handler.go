@@ -3,6 +3,10 @@ package command
 import (
 	"fmt"
 	initProcessor "muscle/command/process/init"
+	"muscle/command/process/ready"
+	"muscle/util/crypt"
+	"net"
+	"os"
 )
 
 type CommandHandler interface {
@@ -16,10 +20,55 @@ type CommandHandler interface {
 
 type CommandHandlerImpl struct {
 	// contains filtered or unexported fields
+	Owner string
 }
 
 func NewCommandHandler() CommandHandler {
-	return &CommandHandlerImpl{}
+	owner, err := GetOwner()
+	if err != nil {
+		return &CommandHandlerImpl{Owner: "NOT_FOUND"}
+	}
+	return &CommandHandlerImpl{Owner: owner}
+}
+
+func GetOwner() (string, error) {
+	userName, err := getUserName()
+	if err != nil {
+		return "", err
+	}
+
+	macAddr, err := getMACAddress()
+	if err != nil {
+		return "", err
+	}
+
+	return crypt.Encrypt(userName, macAddr)
+}
+
+func getMACAddress() (string, error) {
+	interfaces, err := net.Interfaces()
+	if err != nil {
+		return "", err
+	}
+	for _, iface := range interfaces {
+		if iface.HardwareAddr != nil {
+			return iface.HardwareAddr.String(), nil
+		}
+	}
+	return "", fmt.Errorf("MAC 주소를 찾을 수 없습니다.")
+}
+
+func getUserName() (string, error) {
+	userName := os.Getenv("USER") // Unix 계열 (Linux, macOS)
+	if userName == "" {
+		userName = os.Getenv("USERNAME") // Windows
+	}
+
+	if userName == "" {
+		return "", fmt.Errorf("사용자 이름을 찾을 수 없습니다.")
+	}
+
+	return userName, nil
 }
 
 func (c *CommandHandlerImpl) Init(cmd []string) (string, error) {
@@ -59,11 +108,39 @@ func (c *CommandHandlerImpl) Init(cmd []string) (string, error) {
 
 func (c *CommandHandlerImpl) Generate(cmd []string) (string, error) {
 	// Generate
+
 	return "", nil
 }
 
 func (c *CommandHandlerImpl) Ready(cmd []string) (string, error) {
 	// Ready
+
+	config := make(map[string]string)
+	config["project-name"] = cmd[0]
+	config["work-dir"] = cmd[1]
+	config["owner"] = c.Owner
+
+	readyProcessor, err := ready.NewReadyProcessor(config)
+	if err != nil {
+		return "", fmt.Errorf("command_handler_comp_error: \n %v", err)
+	}
+
+	if err := readyProcessor.LoadConfig(); err != nil {
+		return "", fmt.Errorf("command_handler_load_config_error: \n %v", err)
+	}
+
+	if err := readyProcessor.LoadRepository(); err != nil {
+		return "", fmt.Errorf("command_handler_load_repository_error: \n %v", err)
+	}
+
+	if err := readyProcessor.Lock(); err != nil {
+		return "", fmt.Errorf("command_handler_lock_error: \n %v", err)
+	}
+
+	if err := readyProcessor.ReadyRepository(); err != nil {
+		return "", fmt.Errorf("command_handler_ready_repository_error: \n %v", err)
+	}
+
 	return "", nil
 }
 

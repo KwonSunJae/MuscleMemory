@@ -5,7 +5,7 @@ const (
 on:
   push:
     branches:
-      - {{.branch}}
+      - main
 
 jobs:
   deploy:
@@ -36,7 +36,7 @@ jobs:
 on:
   push:
     branches:
-    - {{.branch}}
+    - main
   
 jobs:
   deploy:
@@ -91,7 +91,7 @@ jobs:
 on:
   push:
     branches:
-    - {{.branch}}
+    - main
 
 jobs:
   deploy:
@@ -120,7 +120,7 @@ name: Terraform Apply
 on:
   push:
     branches:
-      - {{ .branch }}
+      - main
 
 jobs:
   terraform:

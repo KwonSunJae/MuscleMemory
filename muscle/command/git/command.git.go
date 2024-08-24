@@ -17,6 +17,7 @@ type Git interface {
 	Pull() error
 	Rebase() error
 	Reset() error
+	ResetHard() error
 	Branch() error
 	PublishBranch(branch string) error
 }
@@ -29,6 +30,10 @@ type GitImpl struct {
 
 func NewGit(repo string) Git {
 	return &GitImpl{repository: repo, cmd: systemCMD.NewCommandSystemExecutor()}
+}
+func (g *GitImpl) ResetHard() error {
+	// Reset
+	return g.cmd.Execute("git", "-C", g.repository, "reset", "--hard")
 }
 func (g *GitImpl) PublishBranch(branch string) error {
 	// Push
