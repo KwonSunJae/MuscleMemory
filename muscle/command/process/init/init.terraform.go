@@ -105,7 +105,7 @@ func (i *InitTerraform) Run() error {
 	pr.Start("Config project.conf file")
 	conf["project-type"] = "terraform"
 	conf["project-name"] = i.Config["project-name"]
-
+	conf["deploy"] = "local"
 	if err := writer.WriteConfig(i.Config["project-name"]+"/"+i.Config["project-name"]+"/project.conf", conf); err != nil {
 		pr.Error("Config project.conf file error")
 		return process_error.NewError("Config project.conf file error", err)

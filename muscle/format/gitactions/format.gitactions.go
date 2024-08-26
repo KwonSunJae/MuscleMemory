@@ -5,7 +5,7 @@ const (
 on:
   push:
     branches:
-      - main
+      - {{ .branch }}
 
 jobs:
   deploy:
@@ -36,7 +36,7 @@ jobs:
 on:
   push:
     branches:
-    - main
+    - {{ .branch }}
   
 jobs:
   deploy:
@@ -91,7 +91,7 @@ jobs:
 on:
   push:
     branches:
-    - main
+    - {{ .branch }}
 
 jobs:
   deploy:
@@ -120,11 +120,32 @@ name: Terraform Apply
 on:
   push:
     branches:
-      - main
+      - {{ .branch }}
 
 jobs:
+  check_commit_message:
+    runs-on: ubuntu-latest
+    outputs:
+      result: {{ .result }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Check commit message
+        id: check_commit_message
+        run: |
+          if [[ "{{ .commit_message }}" == *"Enroll"* ]]; then
+            echo "Contains 'Enroll'"
+            echo "deploy=true" >> $GITHUB_OUTPUT
+          else
+            echo "Does not contain 'Enroll'"
+            echo "deploy=false" >> $GITHUB_OUTPUT
+          fi
+
   terraform:
     runs-on: ubuntu-latest
+    needs: check_commit_message
+    if: {{ .result_output }} == 'true'
 
     steps:
       - name: Checkout code
@@ -140,7 +161,7 @@ jobs:
 
       - name: Terraform Plan
         id: plan
-        run: terraform plan -out=tfplan
+        run: terraform plan -input=false -out=tfplan
         working-directory: ./{{ .branch }}
 
       - name: Terraform Apply

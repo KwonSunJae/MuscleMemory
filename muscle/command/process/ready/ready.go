@@ -5,6 +5,7 @@ import (
 	"muscle/command/git"
 	systemCMD "muscle/command/system"
 	"muscle/logger"
+	"muscle/util/crypt"
 	"muscle/util/loader"
 	"muscle/util/writer"
 	"os"
@@ -54,27 +55,28 @@ func (r *ReadyImpl) Lock() error {
 	pr.Start("Check .lock file exist")
 	if _, err := os.Stat(".lock"); err == nil {
 		lockConf, err := loader.LoadConfig(projectDir + "/.lock")
-		if err != nil {
-			return process_error.NewError("Load .lock file", err)
-		}
-		if _, ok := lockConf["expire"]; ok {
+		if err == nil {
+			// ./lock file is not exist
+			if _, ok := lockConf["expire"]; ok {
 
-			expTimestamp, err := strconv.ParseInt(lockConf["expire"], 10, 64)
-			if err != nil {
-				return process_error.NewError("ParseInt", err)
+				expTimestamp, err := strconv.ParseInt(lockConf["expire"], 10, 64)
+				if err != nil {
+					return process_error.NewError("ParseInt", err)
+				}
+
+				currentTimestamp := time.Now().Unix()
+				if currentTimestamp < expTimestamp && !crypt.CompareOwner(lockConf["owner"], r.Config["owner"]) {
+					pr.Error("The project is locked by other user")
+					return process_error.NewError("The project is locked", nil)
+				}
 			}
 
-			currentTimestamp := time.Now().Unix()
-			if currentTimestamp < expTimestamp && lockConf["owner"] != r.Config["owner"] {
-				pr.Error("The project is locked by other user")
-				return process_error.NewError("The project is locked", nil)
+			// if expired, remove .lock file
+			if err := cmd.Execute("rm", ".lock"); err != nil {
+				return process_error.NewError("Remove .lock file", err)
 			}
 		}
 
-		// if expired, remove .lock file
-		if err := cmd.Execute("rm", ".lock"); err != nil {
-			return process_error.NewError("Remove .lock file", err)
-		}
 	}
 	pr.Done()
 

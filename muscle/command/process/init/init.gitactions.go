@@ -7,6 +7,7 @@ import (
 	"muscle/logger"
 	"muscle/util/checker"
 	"muscle/util/loader"
+	"muscle/util/writer"
 	"os"
 )
 
@@ -79,7 +80,6 @@ func (i *InitGitActions) InputConfig() error {
 		pr.Error("muscle.init file is not exist. Please init")
 		return process_error.NewError("muscle.init file is not exist", err)
 	}
-	i.Config["dir"] = conf["dir"]
 	i.Config["repository-git-url"] = conf["repository-git-url"]
 	pr.Done()
 
@@ -90,6 +90,15 @@ func (i *InitGitActions) InputConfig() error {
 		return process_error.NewError("project.conf file is not exist", err)
 	}
 	i.Config["project-type"] = conf["project-type"]
+	i.Config["dir"] = conf["dir"]
+	pr.Done()
+
+	pr.Start("Overwrite project conf file")
+	i.Config["deploy"] = "gitactions"
+	if err := writer.WriteConfig(i.Config["project-name"]+"/"+i.Config["project-name"]+"/project.conf", i.Config); err != nil {
+		pr.Error("overwrite project conf file error")
+		return process_error.NewError("overwrite project conf file error", err)
+	}
 	pr.Done()
 
 	return nil

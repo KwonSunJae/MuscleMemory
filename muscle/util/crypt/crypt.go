@@ -8,11 +8,14 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"net"
+	"os"
 )
 
 // 암호화 함수
 func Encrypt(plainText, key string) (string, error) {
 	// AES 키는 16, 24, 32 바이트 길이여야 함
+
 	aesKey := []byte(key)
 	block, err := aes.NewCipher(aesKey)
 	if err != nil {
@@ -76,4 +79,62 @@ func pkcs7Unpad(data []byte) []byte {
 	length := len(data)
 	unpadding := int(data[length-1])
 	return data[:(length - unpadding)]
+}
+
+func getMACAddress() (string, error) {
+	interfaces, err := net.Interfaces()
+	if err != nil {
+		return "", err
+	}
+	for _, iface := range interfaces {
+		if iface.HardwareAddr != nil {
+			return iface.HardwareAddr.String()[:16], nil
+		}
+	}
+	return "", fmt.Errorf("MAC 주소를 찾을 수 없습니다.")
+}
+
+func getUserName() (string, error) {
+	userName := os.Getenv("USER") // Unix 계열 (Linux, macOS)
+	if userName == "" {
+		userName = os.Getenv("USERNAME") // Windows
+	}
+
+	if userName == "" {
+		return "", fmt.Errorf("사용자 이름을 찾을 수 없습니다.")
+	}
+
+	return userName, nil
+}
+
+func GetOwner() (string, error) {
+	userName, err := getUserName()
+	if err != nil {
+		return "", err
+	}
+
+	macAddr, err := getMACAddress()
+	if err != nil {
+		return "", err
+	}
+
+	return Encrypt(userName, macAddr)
+}
+
+func CompareOwner(owner1, owner2 string) bool {
+	key, err := getMACAddress()
+	if err != nil {
+		return false
+	}
+	decryptedOwner1, err := Decrypt(owner1, key)
+	if err != nil {
+		return false
+	}
+	decryptedOwner2, err := Decrypt(owner2, key)
+	if err != nil {
+		return false
+	}
+	fmt.Println(decryptedOwner1, decryptedOwner2, decryptedOwner1 == decryptedOwner2)
+
+	return decryptedOwner1 == decryptedOwner2
 }

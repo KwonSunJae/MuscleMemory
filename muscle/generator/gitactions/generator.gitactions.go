@@ -52,6 +52,9 @@ func (g *GeneratorGitActions) Generate(filepath string) error {
 	}
 
 	g.Config["github_token"] = "${{ secrets.GITHUB_TOKEN }}"
+	g.Config["commit_message"] = "${{ github.event.head_commit.message }}"
+	g.Config["result"] = "${{ steps.check_commit_message.outputs.deploy }}"
+	g.Config["result_output"] = "${{ needs.check_commit_message.outputs.deploy }}"
 	g.Config["branch"] = g.Config["project-name"]
 	tmpl, err := template.New("yaml").Parse(script)
 	if err != nil {

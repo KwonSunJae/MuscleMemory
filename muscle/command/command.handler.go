@@ -2,11 +2,10 @@ package command
 
 import (
 	"fmt"
+	"muscle/command/process/enroll"
 	initProcessor "muscle/command/process/init"
 	"muscle/command/process/ready"
 	"muscle/util/crypt"
-	"net"
-	"os"
 )
 
 type CommandHandler interface {
@@ -24,51 +23,12 @@ type CommandHandlerImpl struct {
 }
 
 func NewCommandHandler() CommandHandler {
-	owner, err := GetOwner()
+	owner, err := crypt.GetOwner()
 	if err != nil {
+		fmt.Println(err)
 		return &CommandHandlerImpl{Owner: "NOT_FOUND"}
 	}
 	return &CommandHandlerImpl{Owner: owner}
-}
-
-func GetOwner() (string, error) {
-	userName, err := getUserName()
-	if err != nil {
-		return "", err
-	}
-
-	macAddr, err := getMACAddress()
-	if err != nil {
-		return "", err
-	}
-
-	return crypt.Encrypt(userName, macAddr)
-}
-
-func getMACAddress() (string, error) {
-	interfaces, err := net.Interfaces()
-	if err != nil {
-		return "", err
-	}
-	for _, iface := range interfaces {
-		if iface.HardwareAddr != nil {
-			return iface.HardwareAddr.String(), nil
-		}
-	}
-	return "", fmt.Errorf("MAC 주소를 찾을 수 없습니다.")
-}
-
-func getUserName() (string, error) {
-	userName := os.Getenv("USER") // Unix 계열 (Linux, macOS)
-	if userName == "" {
-		userName = os.Getenv("USERNAME") // Windows
-	}
-
-	if userName == "" {
-		return "", fmt.Errorf("사용자 이름을 찾을 수 없습니다.")
-	}
-
-	return userName, nil
 }
 
 func (c *CommandHandlerImpl) Init(cmd []string) (string, error) {
@@ -151,6 +111,25 @@ func (c *CommandHandlerImpl) Add(cmd []string) (string, error) {
 
 func (c *CommandHandlerImpl) Enroll(cmd []string) (string, error) {
 	// Enroll
+	var conf = make(map[string]string)
+	conf["project-name"] = cmd[0]
+	enrollProcessor, err := enroll.NewEnrollProcessor(conf)
+	if err != nil {
+		return "", fmt.Errorf("command_handler_comp_error: \n %v", err)
+	}
+
+	if err := enrollProcessor.CheckLock(); err != nil {
+		return "", fmt.Errorf("command_handler_check_lock_error: \n %v", err)
+	}
+
+	if err := enrollProcessor.Enroll(); err != nil {
+		return "", fmt.Errorf("command_handler_enroll_error: \n %v", err)
+	}
+
+	if err := enrollProcessor.UnLock(); err != nil {
+		return "", fmt.Errorf("command_handler_unlock_error: \n %v", err)
+	}
+
 	return "", nil
 }
 

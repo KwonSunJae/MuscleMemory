@@ -20,6 +20,7 @@ type Git interface {
 	ResetHard() error
 	Branch() error
 	PublishBranch(branch string) error
+	DestroyCache() error
 }
 
 type GitImpl struct {
@@ -30,6 +31,10 @@ type GitImpl struct {
 
 func NewGit(repo string) Git {
 	return &GitImpl{repository: repo, cmd: systemCMD.NewCommandSystemExecutor()}
+}
+func (g *GitImpl) DestroyCache() error {
+	// DestroyCache
+	return g.cmd.Execute("git", "-C", g.repository, "rm", "--cached", "-r", ".")
 }
 func (g *GitImpl) ResetHard() error {
 	// Reset
@@ -71,7 +76,7 @@ func (g *GitImpl) AddAll() error {
 
 func (g *GitImpl) Commit(message string) error {
 	// Commit
-	return g.cmd.Execute("git", "-C", g.repository, "commit", "-m", `"`+message+`"`)
+	return g.cmd.Execute("git", "-C", g.repository, "commit", "-m", message)
 }
 
 func (g *GitImpl) Push() error {

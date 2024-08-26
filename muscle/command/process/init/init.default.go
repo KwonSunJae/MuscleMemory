@@ -157,6 +157,15 @@ func (i *InitDefault) Run() error {
 		pr.Error("check git branch")
 		return process_error.NewError("git branch error", err)
 	}
+
+	if err := git.DestroyCache(); err != nil {
+		pr.Error("check git destroy cache")
+		return process_error.NewError("git destroy cache error", err)
+	}
+	if err := cmd.Execute("rm", "-rf", dir+"/*"); err != nil {
+		pr.Error("check rm -rf")
+		return process_error.NewError("rm -rf error", err)
+	}
 	if err := git.AddAll(); err != nil {
 		pr.Error("check git add")
 		return process_error.NewError("git add error", err)
