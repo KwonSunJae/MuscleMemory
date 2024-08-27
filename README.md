@@ -3,12 +3,17 @@
 MuscleMemory는 IaC(Infrastructure as Code) 파일의 버전 관리와 동시성을 제어하기 위한 소프트웨어입니다. 폐쇄망 환경에서도 안전하고 효율적으로 인프라를 관리할 수 있도록 설계되었습니다.
 
 ## 개발 동기
-
+!(실패케이스)[https://github.com/KwonSunJae/MuscleMemory/blob/docs/docs/conflict%E1%84%89%E1%85%B5%E1%84%82%E1%85%A1%E1%84%85%E1%85%B5%E1%84%8B%E1%85%A9.drawio.png]
 ### 1. 폐쇄망에서의 tfstate 파일 관리
 Terraform의 tfstate 파일은 AWS S3와 같은 퍼블릭 서비스를 이용하여 동시성을 제어하는 경우가 많습니다. 하지만 폐쇄망에서 작업할 경우 이러한 퍼블릭 서비스에 접근하기 어려운 문제점이 있습니다. 이에, 폐쇄망에 구축된 사설 Git repository와 연동하여 tfstate 파일의 동시성을 제어할 수 있는 소프트웨어가 필요하다는 생각에서 MuscleMemory 프로젝트가 기획되었습니다.
 
 ### 2. IaC 파일의 업데이트 관리
 현재 대용량 트래픽을 처리하고 다양한 서비스를 배포하는 환경에서, 복잡한 인프라를 IaC 파일로 관리하는 것이 일반화되었습니다. 이때, 만약 특정 시점으로 롤백해야 하는 상황이 발생한다면, 재빠르게 대처할 수 있어야 합니다. 따라서 IaC 파일의 업데이트 버전을 관리할 수 있는 시스템이 필요하다는 고민에서 MuscleMemory의 필요성을 느꼈습니다.
+
+## 동작 과정
+
+1. **Muscle이 Conflict를 예방할 수 있는 이유**
+!(성공시나리오)[https://github.com/KwonSunJae/MuscleMemory/blob/docs/docs/success%E1%84%89%E1%85%B5%E1%84%82%E1%85%A1%E1%84%85%E1%85%B5%E1%84%8B%E1%85%A9.drawio.png]
 
 ## 주요 기능
 
