@@ -5,7 +5,7 @@ MuscleMemory는 IaC(Infrastructure as Code) 파일의 버전 관리와 동시성
 ## 개발 동기
 
 
-!(실패케이스)[https://github.com/KwonSunJae/MuscleMemory/blob/docs/docs/conflict%E1%84%89%E1%85%B5%E1%84%82%E1%85%A1%E1%84%85%E1%85%B5%E1%84%8B%E1%85%A9.drawio.png]
+![실패케이스](https://github.com/KwonSunJae/MuscleMemory/blob/docs/docs/conflict%E1%84%89%E1%85%B5%E1%84%82%E1%85%A1%E1%84%85%E1%85%B5%E1%84%8B%E1%85%A9.drawio.png)
 
 
 ### 1. 폐쇄망에서의 tfstate 파일 관리
@@ -19,7 +19,7 @@ Terraform의 tfstate 파일은 AWS S3와 같은 퍼블릭 서비스를 이용하
 1. **Muscle이 Conflict를 예방할 수 있는 이유**
 
 
-!(성공시나리오)[https://github.com/KwonSunJae/MuscleMemory/blob/docs/docs/success%E1%84%89%E1%85%B5%E1%84%82%E1%85%A1%E1%84%85%E1%85%B5%E1%84%8B%E1%85%A9.drawio.png]
+![성공시나리오](https://github.com/KwonSunJae/MuscleMemory/blob/docs/docs/success%E1%84%89%E1%85%B5%E1%84%82%E1%85%A1%E1%84%85%E1%85%B5%E1%84%8B%E1%85%A9.drawio.png)
 
 
 
