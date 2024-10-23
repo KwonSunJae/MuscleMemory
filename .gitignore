@@ -24,3 +24,5 @@ go.work.sum
 
 *.log
 *.init
+
+musclememory.egg-info
