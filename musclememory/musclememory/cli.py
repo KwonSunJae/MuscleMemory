@@ -1,6 +1,7 @@
 import click
 import os
 import subprocess
+import time
 
 @click.group()
 def cli():
@@ -25,6 +26,21 @@ def enroll(repo_url):
         print(f"Git 작업 중 오류 발생: {e}")
     
     print("등록 완료.")
+
+LOCK_FILE_PATH = "repo/tfstate.lock"
+
+@cli.command()
+def lock():
+    """잠금 파일 생성"""
+    if os.path.exists(LOCK_FILE_PATH):
+        print("잠금 파일이 이미 존재합니다. 다른 사용자가 작업 중입니다.")
+        return False
+    else:
+        with open(LOCK_FILE_PATH, 'w') as lock_file:
+            lock_file.write("잠금 파일 생성 시간: " + time.ctime())
+        print("잠금 파일이 생성되었습니다.")
+        return True
+
 
 if __name__ == "__main__":
     cli()
