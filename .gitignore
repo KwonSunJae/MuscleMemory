@@ -26,3 +26,5 @@ go.work.sum
 *.init
 
 musclememory.egg-info
+
+__pycache__
