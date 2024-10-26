@@ -41,6 +41,30 @@ def lock():
         print("잠금 파일이 생성되었습니다.")
         return True
 
+TFSTATE_FILE_PATH = "repo/tfstate.tfstate"
+
+@cli.command()
+def prepare_tfstate():
+    """tfstate 파일을 준비하고 초기화"""
+    if os.path.exists(TFSTATE_FILE_PATH):
+        print("tfstate 파일이 이미 존재합니다. 최신 상태로 업데이트 중...")
+        try:
+            subprocess.run(["git", "pull"], cwd="repo", check=True)
+            print("tfstate 파일이 최신 상태로 업데이트되었습니다.")
+        except subprocess.CalledProcessError as e:
+            print(f"Git 업데이트 중 오류 발생: {e}")
+    else:
+        print("tfstate 파일이 존재하지 않습니다. 기본 템플릿을 생성합니다.")
+        os.makedirs("repo", exist_ok=True)  # 디렉토리가 없는 경우 생성
+        with open(TFSTATE_FILE_PATH, 'w') as tfstate_file:
+            tfstate_file.write('{}')  # 빈 JSON 객체로 초기화
+        try:
+            subprocess.run(["git", "add", "tfstate.tfstate"], cwd="repo", check=True)
+            subprocess.run(["git", "commit", "-m", "초기 tfstate 파일 생성"], cwd="repo", check=True)
+            subprocess.run(["git", "push"], cwd="repo", check=True)
+            print("새로운 tfstate 파일이 Git에 커밋되었습니다.")
+        except subprocess.CalledProcessError as e:
+            print(f"Git 커밋 중 오류 발생: {e}")
 
 if __name__ == "__main__":
     cli()
