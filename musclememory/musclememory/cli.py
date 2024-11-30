@@ -5,6 +5,8 @@ from .commands.add import add
 from .commands.enroll import enroll
 from .commands.complete import complete
 from .commands.config import config_group
+from .commands.fetch import fetch
+from .commands.history import history
 
 @click.group()
 def cli():
@@ -18,6 +20,8 @@ cli.add_command(add)
 cli.add_command(enroll)
 cli.add_command(complete)
 cli.add_command(config_group)
+cli.add_command(fetch)
+cli.add_command(history)
 
 if __name__ == "__main__":
     cli()
